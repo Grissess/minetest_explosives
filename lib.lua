@@ -1,8 +1,11 @@
 --lib.lua
 --Defines the actual explosion-handling library.
 
-function explosives.general_modfunc(pos, node, power, parentvals, globalvals, param)
+function explosives.general_modfunc(pos, power, parentvals, globalvals, param)
+	local node=minetest.get_node(pos)
 	if node.name=="air" then return power end
+	local nodedef=minetest.registered_nodes[node.name]
+	if nodedef and nodedef.can_dig and not nodedef.can_dig(pos, globalvals.player) then return power end
 	local resistance=minetest.get_item_group(node.name, "blast_resistance")
 	if resistance==0 then resistance=explosives.DEFAULT_RESISTANCE end
 	
@@ -45,7 +48,7 @@ local function pos_in_cache(cache, pos)
 	return true
 end
 
-function explosives.general_explode(pos, power, modfunc, param, cache, depth, parentvals, globalvals)
+function explosives.general_explode(pos, power, player, modfunc, param, cache, depth, parentvals, globalvals)
 	if not cache then cache={} end
 	if not modfunc then modfunc=explosives.general_modfunc end
 	if not depth then depth=0 end
@@ -59,12 +62,13 @@ function explosives.general_explode(pos, power, modfunc, param, cache, depth, pa
 		explosives.log("Explosion power="..tostring(power).." at "..minetest.pos_to_string(pos))
 		globalvals.pos=pos
 		globalvals.power=power
+		globalvals.player=player
 		globalvals.drops=0
 	end
 	
 	cache_pos(cache, pos)
 	
-	power=modfunc(pos, minetest.get_node(pos), power, parentvals, globalvals, param)
+	power=modfunc(pos, power, parentvals, globalvals, param)
 	if power<=0 or depth>=explosives.MAX_DEPTH then return end
 	
 	--as a rule, permit only orthogonal faces (one axis offset must be zero) and do not consider a zero offset.
@@ -100,7 +104,7 @@ function explosives.general_explode(pos, power, modfunc, param, cache, depth, pa
 						--explosives.log("DEBUG: Depth 0, position traversal, new position: "..minetest.pos_to_string(newpos))
 					--end
 					if not pos_in_cache(cache, newpos) then
-						explosives.general_explode(newpos, power, modfunc, param, cache, depth+1, {lastpos=pos}, globalvals)
+						explosives.general_explode(newpos, power, player, modfunc, param, cache, depth+1, {lastpos=pos}, globalvals)
 					end
 				until true
 			end

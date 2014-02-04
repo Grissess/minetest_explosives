@@ -7,6 +7,7 @@ end
 
 function explosives.detonate(pos)
 	local node=minetest.get_node(pos)
+	local player=minetest.get_meta(pos):get_string("player")
 	local power=minetest.get_item_group(node.name, "explosive")
 	if power==0 then return explosives.log("WARNING: Attempted to detonate a non-explosive node "..node.name) end
 	
@@ -17,6 +18,7 @@ function explosives.detonate(pos)
 	if tnt then
 		local tntent=tnt:get_luaentity()
 		tntent.power=power
+		tntent.player=player
 		tntent.boomtime=explosives.DEFAULT_COUNTDOWN
 		tntent.modfunc=explosives.general_modfunc
 		tntent.param=nil
@@ -33,6 +35,13 @@ function explosives.on_blast(pos, power)
 		explosives.log("WARNING: Had to remove a "..minetest.get_node(pos).name.."node with an explosives.on_blast callback but no explosive ability (or the entity failed to spawn)")
 		minetest.remove_node(pos)
 	end
+end
+
+function explosives.after_place_node(pos, placer, itemstack, pointed)
+	local name=placer:get_player_name() or ""
+	local meta=minetest.get_meta(pos)
+	meta:set_string("player", name)
+	meta:set_string("infotext", name) --DEBUG
 end
 
 minetest.register_entity("explosives:primed_tnt", {
@@ -68,7 +77,8 @@ minetest.register_node("explosives:tnt", {
 	walkable=true,
 	pointable=true,
 	groups={explosive=1, blast_resistance=1, oddly_breakable_by_hand=2},
-	on_blast=explosives.on_blast
+	on_blast=explosives.on_blast,
+	after_place_node=explosives.after_place_node
 })
 
 minetest.register_node("explosives:mega_tnt", {
@@ -79,7 +89,8 @@ minetest.register_node("explosives:mega_tnt", {
 	walkable=true,
 	pointable=true,
 	groups={explosive=4, blast_resistance=1, oddly_breakable_by_hand=2},
-	on_blast=explosives.on_blast
+	on_blast=explosives.on_blast,
+	after_place_node=explosives.after_place_node
 })
 
 minetest.register_node("explosives:super_tnt", {
@@ -90,7 +101,8 @@ minetest.register_node("explosives:super_tnt", {
 	walkable=true,
 	pointable=true,
 	groups={explosive=16, blast_resistance=1, oddly_breakable_by_hand=2},
-	on_blast=explosives.on_blast
+	on_blast=explosives.on_blast,
+	after_place_node=explosives.after_place_node
 })
 
 minetest.register_node("explosives:ultra_tnt", {
@@ -101,7 +113,8 @@ minetest.register_node("explosives:ultra_tnt", {
 	walkable=true,
 	pointable=true,
 	groups={explosive=64, blast_resistance=1, oddly_breakable_by_hand=2},
-	on_blast=explosives.on_blast
+	on_blast=explosives.on_blast,
+	after_place_node=explosives.after_place_node
 })
 
 minetest.register_node("explosives:hyper_tnt", {
@@ -112,7 +125,8 @@ minetest.register_node("explosives:hyper_tnt", {
 	walkable=true,
 	pointable=true,
 	groups={explosive=256, blast_resistance=1, oddly_breakable_by_hand=2},
-	on_blast=explosives.on_blast
+	on_blast=explosives.on_blast,
+	after_place_node=explosives.after_place_node
 })
 
 minetest.register_node("explosives:blastproofing", {
