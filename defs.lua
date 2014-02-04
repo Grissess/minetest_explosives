@@ -20,7 +20,7 @@ function explosives.detonate(pos)
 		tntent.boomtime=explosives.DEFAULT_COUNTDOWN
 		tntent.modfunc=explosives.general_modfunc
 		tntent.param=nil
-		tnt:setvelocity({x=0, y=10, z=0})
+		tnt:setvelocity({x=0, y=3, z=0})
 		tnt:setacceleration({x=0, y=-10, z=0})
 	else
 		explosives.log("WARNING: Could not spawn explosive entity.")
@@ -37,6 +37,7 @@ end
 
 minetest.register_entity("explosives:primed_tnt", {
 	initial_properties={
+		physical=true,
 		visual="cube",
 		textures=tnt_tiles("normal")
 	},

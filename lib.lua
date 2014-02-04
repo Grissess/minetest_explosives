@@ -1,7 +1,7 @@
 --lib.lua
 --Defines the actual explosion-handling library.
 
-function explosives.general_modfunc(pos, node, power, drops, param)
+function explosives.general_modfunc(pos, node, power, parentvals, globalvals, param)
 	if node.name=="air" then return power end
 	local resistance=minetest.get_item_group(node.name, "blast_resistance")
 	if resistance==0 then resistance=explosives.DEFAULT_RESISTANCE end
@@ -13,14 +13,14 @@ function explosives.general_modfunc(pos, node, power, drops, param)
 		local dropstacks=minetest.get_node_drops(node.name, nil)
 		minetest.remove_node(pos)
 		for _, stack in ipairs(dropstacks) do
-			if drops>explosives.MAX_DROPS then break end
+			if globalvals.drops>explosives.MAX_DROPS then break end
 			if math.random(explosives.DEFAULT_DROPCHANCE)==1 then
 				minetest.add_item(pos, stack)
-				drops=drops+1
+				globalvals.drops=globalvals.drops+1
 			end
 		end
 	end
-	return power-resistance, drops
+	return power-resistance
 end
 
 local function cache_pos(cache, pos)
@@ -45,20 +45,26 @@ local function pos_in_cache(cache, pos)
 	return true
 end
 
-function explosives.general_explode(pos, power, modfunc, param, cache, depth, lastpos, drops)
+function explosives.general_explode(pos, power, modfunc, param, cache, depth, parentvals, globalvals)
 	if not cache then cache={} end
 	if not modfunc then modfunc=explosives.general_modfunc end
 	if not depth then depth=0 end
-	if not drops then drops=0 end
+	if not parentvals then parentvals={} end
+	if not globalvals then globalvals={} end
 	--Sanity
 	if not power then return explosives.log("Attempted to explode with nil power!") end
 	if not pos then return explosives.log("Attempted to explode with nil pos!") end
 	pos={x=math.floor(pos.x), y=math.floor(pos.y), z=math.floor(pos.z)}
-	if depth==0 then explosives.log("Explosion power="..tostring(power).." at "..minetest.pos_to_string(pos)) end
+	if depth==0 then
+		explosives.log("Explosion power="..tostring(power).." at "..minetest.pos_to_string(pos))
+		globalvals.pos=pos
+		globalvals.power=power
+		globalvals.drops=0
+	end
 	
 	cache_pos(cache, pos)
 	
-	power, drops=modfunc(pos, minetest.get_node(pos), power, drops, param)
+	power=modfunc(pos, minetest.get_node(pos), power, parentvals, globalvals, param)
 	if power<=0 or depth>=explosives.MAX_DEPTH then return end
 	
 	--as a rule, permit only orthogonal faces (one axis offset must be zero) and do not consider a zero offset.
@@ -73,7 +79,8 @@ function explosives.general_explode(pos, power, modfunc, param, cache, depth, la
 	local hy=1
 	local lz=-1
 	local hz=1
-	if lastpos then
+	if parentvals.lastpos then
+		local lastpos=parentvals.lastpos
 		local dpos={x=pos.x-lastpos.x, y=pos.y-lastpos.y, z=pos.z-lastpos.z}
 		if dpos.x>0 then lx=0 end
 		if dpos.x<0 then hx=0 end
@@ -93,7 +100,7 @@ function explosives.general_explode(pos, power, modfunc, param, cache, depth, la
 						--explosives.log("DEBUG: Depth 0, position traversal, new position: "..minetest.pos_to_string(newpos))
 					--end
 					if not pos_in_cache(cache, newpos) then
-						explosives.general_explode(newpos, power, modfunc, param, cache, depth+1, pos, drops)
+						explosives.general_explode(newpos, power, modfunc, param, cache, depth+1, {lastpos=pos}, globalvals)
 					end
 				until true
 			end
