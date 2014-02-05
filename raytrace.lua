@@ -157,7 +157,7 @@ if not vector.floor then
 	end
 end
 
-local ptos=minetest.pos_to_string
+--local ptos=minetest.pos_to_string
 
 function raytrace.line_point(la, lb, u)
 	--(4)
@@ -170,12 +170,12 @@ end
 
 function raytrace.isct_line_plane(la, lb, p0, n, unbounded, asu)
 	local dir=vector.subtract(lb, la)
-	print("Raytrace DEBUG: Line "..ptos(la).."->"..ptos(lb).." plane @"..ptos(p0).." norm "..ptos(n))
+	--print("Raytrace DEBUG: Line "..ptos(la).."->"..ptos(lb).." plane @"..ptos(p0).." norm "..ptos(n))
 	--(7)
 	local d=vector.dot(dir, n)
 	if d==0 then return nil end --Also not considering line-in-plane
 	local u=vector.dot(vector.subtract(p0, la), n)/d
-	print("...U="..tostring(u))
+	--print("...U="..tostring(u))
 	if (u<0 or u>1) and not unbounded then return nil end --Not on segment
 	if asu then
 		return u
