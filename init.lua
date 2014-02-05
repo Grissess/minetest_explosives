@@ -10,8 +10,10 @@ explosives={
 		DEFAULT_RESISTANCE={key="explosion_default_resistance", type="n", default=0.35}, --The blast_resistance assumed for blocks with no particular resistance set
 		DEFAULT_COUNTDOWN={key="explosion_default_countdown", type="n", default=5}, --The time, in seconds, until primed TNT goes boom
 		DEFAULT_DROPCHANCE={key="explosion_default_dropchance", type="n", default=4}, --The chance (expressed as 1:n) that an exploded block is dropped after removal.
-		ENABLE_VACUUM={key="explosion_enable_vacuum", type="b", default=true},
-		VACUUM_RADIUS={key="explosion_vacuum_radius", type="n", default=1024}
+		ENABLE_VACUUM={key="explosion_enable_vacuum", type="b", default=true}, --Enable /vacuum command
+		VACUUM_RADIUS={key="explosion_vacuum_radius", type="n", default=1024}, --Radius of /vacuum command
+		ENABLE_TRACE={key="explosion_enable_trace", type="b", default=true}, --Enable /trace command, should be turned off for servers!
+		DAMAGE_FACTOR={key="explosion_damage_factor", type="n", default=20} --Blast damage done by a player at the epicenter of a 1-power explosion
 	}
 }
 
@@ -41,6 +43,8 @@ for name, spec in pairs(explosives.default_settings) do
 	end
 	explosives.log("Config setting "..name.." = "..tostring(explosives[name]))
 end
+
+dofile(explosives.modpath.."/raytrace.lua")
 
 dofile(explosives.modpath.."/lib.lua")
 

@@ -58,6 +58,7 @@ function explosives.general_explode(pos, power, player, modfunc, param, cache, d
 	--Sanity
 	if not power then return explosives.log("Attempted to explode with nil power!") end
 	if not pos then return explosives.log("Attempted to explode with nil pos!") end
+	local objects
 	pos={x=math.floor(pos.x), y=math.floor(pos.y), z=math.floor(pos.z)}
 	if depth==0 then
 		explosives.log("Explosion power="..tostring(power).." at "..minetest.pos_to_string(pos))
@@ -65,6 +66,12 @@ function explosives.general_explode(pos, power, player, modfunc, param, cache, d
 		globalvals.power=power
 		globalvals.player=player
 		globalvals.drops=0
+		
+		--Store this now, because there's going to likely be a lot of drops later.
+		--The following distance calculation is a solution for which the damage would be >=1;
+		--this should suffice for our purposes.
+		local radius=math.log(1/(power*explosives.DAMAGE_FACTOR))/math.log(0.5)
+		objects=minetest.get_objects_inside_radius(pos, radius)
 	end
 	
 	cache_pos(cache, pos)
@@ -109,6 +116,15 @@ function explosives.general_explode(pos, power, player, modfunc, param, cache, d
 					end
 				until true
 			end
+		end
+	end
+	
+	if depth==0 then
+		--Do a raytrace to see if we cleared a line between the original pos and each of the stored objects;
+		--if we did, then the blast was sufficient to propagate to that object.
+		for _, obj in ipairs(objects) do
+			--TODO: Use punch? What kind of tool capabilities should equate to a blast?
+			obj:set_hp(obj:get_hp()-(explosives.DAMAGE_FACTOR*power*(0.5^vector.length(obj:getpos(), pos))))
 		end
 	end
 end

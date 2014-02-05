@@ -220,3 +220,31 @@ if explosives.ENABLE_VACUUM then
 		end
 	})
 end
+
+if explosives.ENABLE_TRACE then
+	minetest.register_privilege("trace", "Player can debug the trace library.")
+	
+	minetest.register_chatcommand("trace", {
+		params="(x1,y1,z1) (x2,y2,z2) block",
+		description="Set all blocks on the trace between the given points to block.",
+		privs={trace=true},
+		func=function(player, params)
+			local p1, p2, node
+			p1, p2, node=string.match(params, "^(%S+) (%S+) (%S+)$")
+			if not (p1 and p2 and node) then
+				minetest.chat_send_player(player, "Invalid trace specification.")
+				return
+			end
+			p1=minetest.string_to_pos(p1)
+			p2=minetest.string_to_pos(p2)
+			if not (p1 and p2) then
+				minetest.chat_send_player(player, "Invalid position specification.")
+				return
+			end
+			local pts=raytrace.trace_node_points(p1, p2)
+			for _, pt in ipairs(pts) do
+				minetest.set_node(pt, {name=node})
+			end
+		end
+	})
+end
