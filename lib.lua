@@ -6,7 +6,7 @@ function explosives.general_modfunc(pos, power, parentvals, globalvals, param)
 	if node.name=="air" then return power end
 	local nodedef=minetest.registered_nodes[node.name]
 	if nodedef and nodedef.can_dig and not nodedef.can_dig(pos, globalvals.player) then return power end
-	if minetest.get_item_group(node.name, "unbreakable")>0 then return power end
+	if minetest.get_item_group(node.name, "unbreakable")>0 then return 0 end
 	local resistance=minetest.get_item_group(node.name, "blast_resistance")
 	if resistance==0 then resistance=explosives.DEFAULT_RESISTANCE end
 	
