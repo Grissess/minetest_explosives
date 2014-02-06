@@ -81,3 +81,12 @@ Entity developers might want to know about some attributes that may be stored on
 The position is calculated as the nearest integer position to the entity's box center during detonation.
 
 To force an explosion of an explosive node from Lua, use explosives.detonate(pos). The return value is an `ObjectRef` whose `LuaEntitySAO` may be configured as needed, or nil if the block wasn't explosive (in which case the node is not removed) or the entity couldn't be created (in which case the node is removed anyways).
+
+Raytrace
+--------
+
+To support some of the stuff that involved tracing rays across nodes, a raytrace library was added--though it is very general and may be used by other mods fairly easily. The public API is as follows:
+
+* `raytrace.trace_node_points(la, lb)`: Given endpoint vectors `la` and `lb`, returns an array of vectors representing node positions that include at least one point on this line segment.
+* `raytrace.trace_node_array(la, lb)`: As above, but returns instead an array of `node` structures.
+* `raytrace.trace_node_map(la, lb)`: As above, but instead returns the nodes in a mapping table which may be indexed by `tbl[x][y][z]` -> `node`. Entries only exist for points on the line segment.
