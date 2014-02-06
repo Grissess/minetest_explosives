@@ -137,6 +137,12 @@ another informal proof of the theorem above :P
 
 So...that's it :D . The rest of this file is dedicated to the (probably comparatively small)
 algorithm described exactly above. So, let's get to some gaming!
+
+UPDATE: So, apparently, after some careful looking at the debug screen, I've deduced that...
+well...Minetest is weird. The separation planes aren't at integers, but rather at
+*exact halves*; the integers represent the center of the node. The code below is updated to
+take this into account, but the above explanation is not. It's not much of an effect; the
+only thing that changes is the "union integers" part of (8), as explained.
 ]]--
 
 raytrace={}
@@ -195,8 +201,8 @@ function raytrace.all_intersections(la, lb, asu)
 		local ka=math.floor(la[cmp])
 		local kb=math.floor(lb[cmp])
 		local n=raytrace.FUNDAMENTAL_UNITS[cmp]
-		for k=math.min(ka, kb), math.max(ka, kb) do
-			local res=raytrace.isct_line_plane(la, lb, vector.multiply(n, k), n, false, true)
+		for k=math.min(ka, kb)-1, math.max(ka, kb)+1 do --Added some range just to be sure we cover all of the planes
+			local res=raytrace.isct_line_plane(la, lb, vector.multiply(n, k+0.5), n, false, true)
 			if res then
 				table.insert(isctu, res)
 			end
@@ -216,7 +222,7 @@ function raytrace.all_intersections(la, lb, asu)
 end
 
 function raytrace.node_at(pos)
-	return minetest.get_node(vector.floor(pos))
+	return minetest.get_node(vector.round(pos))
 end
 
 --Public API
@@ -225,14 +231,14 @@ function raytrace.trace_node_points(la, lb)
 	local iscts=raytrace.all_intersections(la, lb)
 	local pts={}
 	
-	local fa=vector.floor(la)
-	local fb=vector.floor(lb)
+	local fa=vector.round(la)
+	local fb=vector.round(lb)
 	
 	table.insert(pts, fa)
 	
 	if #iscts>1 then
 		for i=1,#iscts-1 do
-			table.insert(pts, vector.floor(raytrace.line_midpoint(iscts[i], iscts[i+1])))
+			table.insert(pts, vector.round(raytrace.line_midpoint(iscts[i], iscts[i+1])))
 		end
 	end
 	

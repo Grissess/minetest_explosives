@@ -54,17 +54,16 @@ minetest.register_entity("explosives:primed_tnt", {
 		local pos=self.object:getpos()
 		if not self.boomtime then self.boomtime=0 end
 		if dt>self.boomtime then
-			pos={x=pos.x+0.5, y=pos.y+0.5, z=pos.z+0.5}
+			--pos={x=pos.x+0.25, y=pos.y+0.25, z=pos.z+0.25}
+			--Just as a note, this line remains commented for good reason and as a reminder;
+			--it seems that cubic entities like this consider their position to be at the center
+			--of their volume, unlike players, which consider their position to be at their feet
+			--(and there's probably mimicry of this principle in player-like entities).
 			explosives.general_explode(pos, self.power, self.modfunc, self.param)
 			self.object:remove()
 			return
 		else
 			self.boomtime=self.boomtime-dt
-		end
-		pos.y=pos.y-0.5
-		if minetest.get_node(pos).name~="air" then
-			self.object:setvelocity({x=0, y=0, z=0})
-			self.object:setacceleration({x=0, y=0, z=0})
 		end
 	end
 })
@@ -207,13 +206,15 @@ if explosives.ENABLE_VACUUM then
 			local inv=ply:get_inventory()
 			local objects=minetest.get_objects_inside_radius(ply:getpos(), explosives.VACUUM_RADIUS)
 			for _, obj in ipairs(objects) do
-				local luaobj=obj:get_luaentity()
-				if not luaobj then
-					explosives.log("WARNING: No lua object associated!")
-				elseif luaobj.name=="__builtin:item" then
-					local result=inv:add_item("main", luaobj.itemstring)
-					if result:is_empty() then
-						obj:remove()
+				if not obj:is_player() then
+					local luaobj=obj:get_luaentity()
+					if not luaobj then
+						explosives.log("WARNING: No lua object associated!")
+					elseif luaobj.name=="__builtin:item" then
+						local result=inv:add_item("main", luaobj.itemstring)
+						if result:is_empty() then
+							obj:remove()
+						end
 					end
 				end
 			end

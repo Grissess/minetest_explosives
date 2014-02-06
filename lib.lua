@@ -1,9 +1,23 @@
 --lib.lua
 --Defines the actual explosion-handling library.
 
+local function is_empty(node)
+	return node.name=="air" or node.name=="ignore"
+end
+
+local function entity_name(obj)
+	if obj:is_player() then
+		return "Player "..obj:get_player_name()
+	elseif obj:get_luaentity() then
+		return "Lua object "..obj:get_luaentity().name
+	else
+		return "Unknown thing"
+	end
+end
+
 function explosives.general_modfunc(pos, power, parentvals, globalvals, param)
 	local node=minetest.get_node(pos)
-	if node.name=="air" then return power end
+	if is_empty(node) then return power end
 	local nodedef=minetest.registered_nodes[node.name]
 	if nodedef and nodedef.can_dig and not nodedef.can_dig(pos, globalvals.player) then return power end
 	if minetest.get_item_group(node.name, "unbreakable")>0 then return 0 end
@@ -14,13 +28,15 @@ function explosives.general_modfunc(pos, power, parentvals, globalvals, param)
 	if nodedef and nodedef.on_blast then
 		nodedef.on_blast(pos, power)
 	else
-		local dropstacks=minetest.get_node_drops(node.name, nil)
-		minetest.remove_node(pos)
-		for _, stack in ipairs(dropstacks) do
-			if globalvals.drops>explosives.MAX_DROPS then break end
-			if math.random(explosives.DEFAULT_DROPCHANCE)==1 then
-				minetest.add_item(pos, stack)
-				globalvals.drops=globalvals.drops+1
+		if power>resistance then
+			local dropstacks=minetest.get_node_drops(node.name, nil)
+			minetest.remove_node(pos)
+			for _, stack in ipairs(dropstacks) do
+				if globalvals.drops>explosives.MAX_DROPS then break end
+				if math.random(explosives.DEFAULT_DROPCHANCE)==1 then
+					minetest.add_item(pos, stack)
+					globalvals.drops=globalvals.drops+1
+				end
 			end
 		end
 	end
@@ -59,7 +75,7 @@ function explosives.general_explode(pos, power, player, modfunc, param, cache, d
 	if not power then return explosives.log("Attempted to explode with nil power!") end
 	if not pos then return explosives.log("Attempted to explode with nil pos!") end
 	local objects
-	pos={x=math.floor(pos.x), y=math.floor(pos.y), z=math.floor(pos.z)}
+	local nodepos={x=math.floor(pos.x), y=math.floor(pos.y), z=math.floor(pos.z)}
 	if depth==0 then
 		explosives.log("Explosion power="..tostring(power).." at "..minetest.pos_to_string(pos))
 		globalvals.pos=pos
@@ -70,7 +86,7 @@ function explosives.general_explode(pos, power, player, modfunc, param, cache, d
 		--Store this now, because there's going to likely be a lot of drops later.
 		--The following distance calculation is a solution for which the damage would be >=1;
 		--this should suffice for our purposes.
-		local radius=math.log(1/(power*explosives.DAMAGE_FACTOR))/math.log(0.5)
+		local radius=(explosives.DAMAGE_FACTOR*power)^0.5
 		objects=minetest.get_objects_inside_radius(pos, radius)
 	end
 	
@@ -93,7 +109,7 @@ function explosives.general_explode(pos, power, player, modfunc, param, cache, d
 	local hz=1
 	if parentvals.lastpos then
 		local lastpos=parentvals.lastpos
-		local dpos={x=pos.x-lastpos.x, y=pos.y-lastpos.y, z=pos.z-lastpos.z}
+		local dpos={x=nodepos.x-lastpos.x, y=nodepos.y-lastpos.y, z=nodepos.z-lastpos.z}
 		if dpos.x>0 then lx=0 end
 		if dpos.x<0 then hx=0 end
 		if dpos.y>0 then ly=0 end
@@ -107,7 +123,7 @@ function explosives.general_explode(pos, power, player, modfunc, param, cache, d
 			for dz=lz, hz do
 				repeat
 					if (dx==0 and dy==0 and dz==0) or not (dx==0 or dy==0 or dz==0) then break end
-					local newpos={x=pos.x+dx, y=pos.y+dy, z=pos.z+dz}
+					local newpos={x=nodepos.x+dx, y=nodepos.y+dy, z=nodepos.z+dz}
 					--if depth==0 then
 						--explosives.log("DEBUG: Depth 0, position traversal, new position: "..minetest.pos_to_string(newpos))
 					--end
@@ -123,8 +139,36 @@ function explosives.general_explode(pos, power, player, modfunc, param, cache, d
 		--Do a raytrace to see if we cleared a line between the original pos and each of the stored objects;
 		--if we did, then the blast was sufficient to propagate to that object.
 		for _, obj in ipairs(objects) do
-			--TODO: Use punch? What kind of tool capabilities should equate to a blast?
-			obj:set_hp(obj:get_hp()-(explosives.DAMAGE_FACTOR*power*(0.5^vector.length(obj:getpos(), pos))))
+			local opos=obj:getpos()
+			if obj:is_player() then
+				opos.y=opos.y+0.1 --Add some distance for raytracing; otherwise this point is on the separation plane, and might cause some FP issues.
+			end
+			local skip=false
+			local nodes=raytrace.trace_node_array(pos, opos)
+			--explosives.log("DEBUG: Tracing nodes from "..minetest.pos_to_string(pos).." to "..minetest.pos_to_string(opos))
+			for _, node in ipairs(nodes) do
+				--explosives.log("DEBUG: Testing node "..node.name)
+				if not is_empty(node) then
+					explosives.log("DEBUG: Skipping damage calc for "..tostring(obj).." ("..entity_name(obj)..") @"..minetest.pos_to_string(opos).."because the path is obstructed.")
+					skip=true
+					break
+				end
+			end
+			if not skip then
+				local dist=vector.distance(pos, opos)
+				local damage
+				if dist==0 then
+					damage=explosives.MAX_DAMAGE
+				else
+					damage=math.min(explosives.DAMAGE_FACTOR*power*(dist^-2), explosives.MAX_DAMAGE)
+				end
+				explosives.log("DEBUG: Performing damage calc; "..tostring(damage).." damage (distance "..tostring(dist)..") assigned to "..tostring(obj).." ("..entity_name(obj)..")")
+				--TODO: Use punch? What kind of tool capabilities should equate to a blast?
+				obj:set_hp(obj:get_hp()-damage)
+			end
 		end
+		explosives.log("DEBUG: Explosion at "..minetest.pos_to_string(pos).." done.")
+		--minetest.set_node(pos, {name="wool:red"}) --DEBUG
+		--minetest.set_node(nodepos, {name="wool:blue"}) --DEBUG
 	end
 end
