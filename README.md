@@ -11,13 +11,14 @@ Currently supports:
 * The unused (as far as I know) `on_blast` function in node defs, with the usual semantics. (TODO: Let it dynamically provide blast resistance values...)
 * A fairly fast, efficient, and stable explosion propagation function (`explosives.general_explode`) that may be called from any explosive and customized with a modification callback (`explosives.general_modfunc`, usually).
 * Item drops, which may happen only by chance.
+* Entity damage! (Based on a powerful voxel raytracing library that is extensible and flexible; scroll all the way down :P)
+* Integration with mesecons.
 * Easy per-game configuation of various performance and tuning parameters :D
 
 Will eventually support:
 
 * Different modfuncs (for things like fission or energy weapons).
 * An explosion algorithm that avoids the "wrap-around" currently afforded by unrestricted recursion (and makes it less ray-like).
-* Entity damage (soon!)
 * Better textures, hopefully :P
 
 Use
@@ -36,8 +37,12 @@ API
 
 This is very likely to change, so don't depend on it:
 
-* `explosives.general_explode(pos, power, player, modfunc, param, cache, depth, parentvals, globalvals)`: Explode at `pos` with `power` (1 being the usual TNT). `player` is the player to be blamed for causing the explosion. This is used in `can_dig` callbacks, and can be the empty string (using nil is discouraged). All other arguments are optional, in particular:
+* `explosives.general_explode(pos, power, player, options, modfunc, param, cache, depth, parentvals, globalvals)`: Explode at `pos` with `power` (1 being the usual TNT). `player` is the player to be blamed for causing the explosion. This is used in `can_dig` callbacks, and can be the empty string (using nil is discouraged). All other arguments are optional, in particular:
 
+  * `options` are the options to be in effect. If not given (or nil), all defaults are assumed. Any key also not given explicitly will be set to its default. Valid options include:
+    * `blockdamage` (default true): Do damage to terrain during this explosion. (Turning this off cuts down on processing time dramatically, as no recursion occurs.)
+    * `entitydamage` (default true): Do damage to entities during this explosion.
+    * `entitypush` (default true): Push entities using setvelocity during this explosion. Turning both this and the above off turn off processing and searching for entities altogether.
   * `modfunc` is the modification func called at each position with each node, at most once per position, to cause explosion effects (damage) to blocks. The default implementation is `explosives.general_modfunc`, which handles on_blast and item drop logic.
   * `param` is a parameter that may be passed to a custom `modfunc`. `explosives.general_modfunc` doesn't use it.
   * `cache` is the position visit cache and should not be passed.
