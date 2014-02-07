@@ -31,6 +31,7 @@ function explosives.general_modfunc(pos, power, parentvals, globalvals, param)
 		if power>resistance then
 			local dropstacks=minetest.get_node_drops(node.name, nil)
 			minetest.remove_node(pos)
+			if node.name=="fire:basic_flame" then fire.on_flame_remove_at(pos) end
 			for _, stack in ipairs(dropstacks) do
 				if globalvals.drops>explosives.MAX_DROPS then break end
 				if math.random(explosives.DEFAULT_DROPCHANCE)==1 then

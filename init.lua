@@ -18,6 +18,10 @@ explosives={
 	}
 }
 
+if not explosives.modpath then
+	error("[EXPLOSIVES] ERROR! The 'minetest_explosives' repo MUST be called 'explosives' to function properly!")
+end
+
 function explosives.log(s)
 	print("[EXPLOSIVES] "..s)
 end

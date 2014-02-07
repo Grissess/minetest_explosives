@@ -14,7 +14,7 @@ function explosives.detonate(pos)
 	explosives.log("DEBUG: Detonating "..node.name.." at "..minetest.pos_to_string(pos))
 	
 	minetest.remove_node(pos)
-	local tnt=minetest.add_entity(pos, "explosives:primed_tnt")
+	local tnt=minetest.add_entity(pos, "explosives:explosive")
 	if tnt then
 		local tntent=tnt:get_luaentity()
 		tntent.power=power
@@ -22,6 +22,14 @@ function explosives.detonate(pos)
 		tntent.boomtime=explosives.DEFAULT_COUNTDOWN
 		tntent.modfunc=explosives.general_modfunc
 		tntent.param=nil
+		local nodedef=minetest.registered_nodes[node.name]
+		if nodedef and nodedef.tiles then
+			tntent.tiles=nodedef.tiles
+		else
+			tntent.tiles=minetest.registered_nodes["explosives:tnt"].tiles
+			explosives.log("WARNING: Using default textures for unknown explosive node "..node.name.."'s explosive entity")
+		end
+		tntent:update_visual()
 		tnt:setvelocity({x=0, y=3, z=0})
 		tnt:setacceleration({x=0, y=-10, z=0})
 	else
@@ -44,7 +52,7 @@ function explosives.after_place_node(pos, placer, itemstack, pointed)
 	meta:set_string("infotext", name) --DEBUG
 end
 
-minetest.register_entity("explosives:primed_tnt", {
+minetest.register_entity("explosives:explosive", {
 	initial_properties={
 		physical=true,
 		visual="cube",
@@ -52,6 +60,15 @@ minetest.register_entity("explosives:primed_tnt", {
 	},
 	on_step=function(self, dt)
 		local pos=self.object:getpos()
+		minetest.add_particle({
+			pos=vector.add(pos, vector.new(0, 0.6, 0)),
+			size=3,
+			velocity=vector.new(2*math.random(), 3+math.random(), 2*math.random()),
+			acceleration=vector.new(0, -9, 0),
+			expirationtime=0.5+0.5*math.random(),
+			texture="fire_particle.png",
+			collisiondetection=false
+		})
 		if not self.boomtime then self.boomtime=0 end
 		if dt>self.boomtime then
 			--pos={x=pos.x+0.25, y=pos.y+0.25, z=pos.z+0.25}
@@ -65,6 +82,9 @@ minetest.register_entity("explosives:primed_tnt", {
 		else
 			self.boomtime=self.boomtime-dt
 		end
+	end,
+	update_visual=function(self)
+		self.object:set_properties({textures=self.tiles})
 	end
 })
 
