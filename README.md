@@ -6,7 +6,7 @@ Hey!
 
 You're looking at the development branch! This may be unstable, and there may be issues in here that can cause serious stability concerns; I would not recommend running this on an established server or any map that you care about.
 
-If you'd like to go to the stable version, please check out the "master" branch. Otherwise, continue at your own risk.
+If you'd like to go to the stable version, please check out the ["master" branch](https://github.com/Grissess/minetest_explosives/tree/master). Otherwise, continue at your own risk.
 
 Brings big booms to [Minetest](minetest.net) :D
 
