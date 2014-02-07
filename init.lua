@@ -6,7 +6,7 @@ explosives={
 	modpath=minetest.get_modpath("explosives"),
 	default_settings={
 		MAX_DEPTH={key="explosion_maxdepth", type="n", default=16}, --How deep the call stack goes in the recursive general_explosion algorithm
-		MAX_DROPS={key="explosion_maxdrops", type="n", default=128}, --Maximum number of drops to place from a single explosion
+		MAX_DROPS={key="explosion_maxdrops", type="n", default=49}, --Maximum number of drops to place from a single explosion (experimentally found to be maximal stored in a mapblock)
 		MAX_DAMAGE={key="explosion_maxdamage", type="n", default=10000}, --Maximum damage that may be done to an entity from blast damage
 		DEFAULT_RESISTANCE={key="explosion_default_resistance", type="n", default=0.35}, --The blast_resistance assumed for blocks with no particular resistance set
 		DEFAULT_COUNTDOWN={key="explosion_default_countdown", type="n", default=5}, --The time, in seconds, until primed TNT goes boom
