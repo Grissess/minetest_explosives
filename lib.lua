@@ -166,6 +166,9 @@ function explosives.general_explode(pos, power, player, modfunc, param, cache, d
 				explosives.log("DEBUG: Performing damage calc; "..tostring(damage).." damage (distance "..tostring(dist)..") assigned to "..tostring(obj).." ("..entity_name(obj)..")")
 				--TODO: Use punch? What kind of tool capabilities should equate to a blast?
 				obj:set_hp(obj:get_hp()-damage)
+				if dist~=0 then
+					obj:setvelocity(vector.multiply(vector.normalize(vector.subtract(opos, pos)), damage/20))
+				end
 			end
 		end
 		explosives.log("DEBUG: Explosion at "..minetest.pos_to_string(pos).." done.")

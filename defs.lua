@@ -60,11 +60,15 @@ minetest.register_entity("explosives:explosive", {
 	},
 	on_step=function(self, dt)
 		local pos=self.object:getpos()
+		local pvel=vector.new(4*math.random()-2, 3+2*math.random(), 4*math.random()-2)
+		local pacc=vector.new(0, -9, 0)
 		minetest.add_particle({
 			pos=vector.add(pos, vector.new(0, 0.6, 0)),
 			size=3,
-			velocity=vector.new(2*math.random(), 3+math.random(), 2*math.random()),
-			acceleration=vector.new(0, -9, 0),
+			velocity=pvel,
+			vel=pvel, --XXX lua_particles.cpp uses these keys, but this change is not documented (yet). FIXME?
+			acceleration=pacc,
+			acc=pacc,
 			expirationtime=0.5+0.5*math.random(),
 			texture="fire_particle.png",
 			collisiondetection=false
@@ -155,6 +159,17 @@ minetest.register_node("explosives:blastproofing", {
 	walkable=true,
 	pointable=true,
 	groups={cracky=2, blast_resistance=32}
+})
+
+minetest.register_node("explosives:blastproof_glass", {
+	drawtype="glasslike",
+	tiles={"blastproof_glass.png"},
+	paramtype="light",
+	walkable=true,
+	pointable=true,
+	sunlight_propagates=true,
+	groups={blast_resistance=32, oddly_breakable_by_hand=2},
+	sounds=default.node_sound_glass_defaults()
 })
 
 minetest.register_craftitem("explosives:gunpower", {
