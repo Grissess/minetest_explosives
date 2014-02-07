@@ -1,8 +1,8 @@
 --defs.lua
 --Defines all of the explosive materials in this mod.
 
-local function tnt_tiles(type)
-	return {"tnt_"..type.."_top.png", "tnt_"..type.."_bottom.png", "tnt_"..type.."_side_a.png", "tnt_"..type.."_side_b.png", "tnt_"..type.."_side_a.png", "tnt_"..type.."_side_b.png"}
+local function is_water(node)
+	return node.name=="default:water_flowing" or node.name=="default:water_source"
 end
 
 function explosives.detonate(pos)
@@ -52,6 +52,32 @@ function explosives.after_place_node(pos, placer, itemstack, pointed)
 	meta:set_string("infotext", name) --DEBUG
 end
 
+function explosives.mesecons_action_on(pos, node)
+	explosives.log("DEBUG: Detonating explosive at "..minetest.pos_to_string(pos).." due to mesecons effector")
+	explosives.detonate(pos)
+end
+
+local MESECONS={effector={action_on=explosives.mesecons_action_on}}
+
+local function tnt_tiles(type)
+	return {"tnt_"..type.."_top.png", "tnt_"..type.."_bottom.png", "tnt_"..type.."_side_a.png", "tnt_"..type.."_side_b.png", "tnt_"..type.."_side_a.png", "tnt_"..type.."_side_b.png"}
+end
+
+local function tnt_nodedef(type, descr, explosive)
+	return {
+		description=descr,
+		drawtype="normal",
+		tiles=tnt_tiles(type),
+		paramtype="light",
+		walkable=true,
+		pointable=true,
+		groups={explosive=explosive, blast_resistance=1, oddly_breakable_by_hand=2},
+		on_blast=explosives.on_blast,
+		after_place_node=explosives.after_place_node,
+		mesecons=MESECONS
+	}
+end
+
 minetest.register_entity("explosives:explosive", {
 	initial_properties={
 		physical=true,
@@ -80,7 +106,9 @@ minetest.register_entity("explosives:explosive", {
 			--it seems that cubic entities like this consider their position to be at the center
 			--of their volume, unlike players, which consider their position to be at their feet
 			--(and there's probably mimicry of this principle in player-like entities).
-			explosives.general_explode(pos, self.power, self.modfunc, self.param)
+			local node=minetest.get_node(pos)
+			explosives.log("DEBUG: Explosion to take place inside block of "..node.name)
+			explosives.general_explode(pos, self.power, self.player, {blockdamage=not is_water(node)}, self.modfunc, self.param)
 			self.object:remove()
 			return
 		else
@@ -92,65 +120,15 @@ minetest.register_entity("explosives:explosive", {
 	end
 })
 
-minetest.register_node("explosives:tnt", {
-	description="TNT",
-	drawtype="normal",
-	tiles=tnt_tiles("normal"),
-	paramtype="light",
-	walkable=true,
-	pointable=true,
-	groups={explosive=1, blast_resistance=1, oddly_breakable_by_hand=2},
-	on_blast=explosives.on_blast,
-	after_place_node=explosives.after_place_node
-})
+minetest.register_node("explosives:tnt", tnt_nodedef("normal", "TNT", 1))
 
-minetest.register_node("explosives:mega_tnt", {
-	description="Mega TNT",
-	drawtype="normal",
-	tiles=tnt_tiles("mega"),
-	paramtype="light",
-	walkable=true,
-	pointable=true,
-	groups={explosive=4, blast_resistance=1, oddly_breakable_by_hand=2},
-	on_blast=explosives.on_blast,
-	after_place_node=explosives.after_place_node
-})
+minetest.register_node("explosives:mega_tnt", tnt_nodedef("mega", "Mega TNT", 4))
 
-minetest.register_node("explosives:super_tnt", {
-	description="Super TNT",
-	drawtype="normal",
-	tiles=tnt_tiles("super"),
-	paramtype="light",
-	walkable=true,
-	pointable=true,
-	groups={explosive=16, blast_resistance=1, oddly_breakable_by_hand=2},
-	on_blast=explosives.on_blast,
-	after_place_node=explosives.after_place_node
-})
+minetest.register_node("explosives:super_tnt", tnt_nodedef("super", "Super TNT", 16))
 
-minetest.register_node("explosives:ultra_tnt", {
-	description="Ultra TNT",
-	drawtype="normal",
-	tiles=tnt_tiles("ultra"),
-	paramtype="light",
-	walkable=true,
-	pointable=true,
-	groups={explosive=64, blast_resistance=1, oddly_breakable_by_hand=2},
-	on_blast=explosives.on_blast,
-	after_place_node=explosives.after_place_node
-})
+minetest.register_node("explosives:ultra_tnt", tnt_nodedef("ultra", "Ultra TNT", 64))
 
-minetest.register_node("explosives:hyper_tnt", {
-	description="Hyper TNT",
-	drawtype="normal",
-	tiles=tnt_tiles("hyper"),
-	paramtype="light",
-	walkable=true,
-	pointable=true,
-	groups={explosive=256, blast_resistance=1, oddly_breakable_by_hand=2},
-	on_blast=explosives.on_blast,
-	after_place_node=explosives.after_place_node
-})
+minetest.register_node("explosives:hyper_tnt", tnt_nodedef("hyper", "Hyper TNT", 256))
 
 minetest.register_node("explosives:blastproofing", {
 	drawtype="normal",
