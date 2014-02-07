@@ -1,6 +1,13 @@
 minetest_explosives
 ===================
 
+Hey!
+----
+
+You're looking at the development branch! This may be unstable, and there may be issues in here that can cause serious stability concerns; I would not recommend running this on an established server or any map that you care about.
+
+If you'd like to go to the stable version, please check out the "master" branch. Otherwise, continue at your own risk.
+
 Brings big booms to [Minetest](minetest.net) :D
 
 Currently a Work-in-Progress; a stable and usable API should be available soon!
