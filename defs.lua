@@ -45,6 +45,14 @@ function explosives.on_blast(pos, power)
 	end
 end
 
+function explosives.on_punch(pos, node, puncher, pointed)
+	if puncher:get_wielded_item():get_name()=="default:torch" then
+		explosives.detonate(pos)
+	else
+		minetest.node_punch(pos, node, puncher, pointed)
+	end
+end
+
 function explosives.after_place_node(pos, placer, itemstack, pointed)
 	local name=placer:get_player_name() or ""
 	local meta=minetest.get_meta(pos)
@@ -73,6 +81,7 @@ local function tnt_nodedef(type, descr, explosive)
 		pointable=true,
 		groups={explosive=explosive, blast_resistance=1, oddly_breakable_by_hand=2},
 		on_blast=explosives.on_blast,
+		on_punch=explosives.on_punch,
 		after_place_node=explosives.after_place_node,
 		mesecons=MESECONS
 	}
