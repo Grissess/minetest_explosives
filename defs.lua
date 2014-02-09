@@ -97,7 +97,7 @@ minetest.register_entity("explosives:explosive", {
 		local pos=self.object:getpos()
 		local pvel=vector.new(4*math.random()-2, 3+2*math.random(), 4*math.random()-2)
 		local pacc=vector.new(0, -9, 0)
-		minetest.add_particle({
+		local pspec={
 			pos=vector.add(pos, vector.new(0, 0.6, 0)),
 			size=3,
 			velocity=pvel,
@@ -106,8 +106,30 @@ minetest.register_entity("explosives:explosive", {
 			acc=pacc,
 			expirationtime=0.5+0.5*math.random(),
 			texture="fire_particle.png",
-			collisiondetection=false
-		})
+			collisiondetection=true
+		}
+		if explosives.compat.particle_call=="1arg" then
+			local ok, err=pcall(minetest.add_particle, pspec)
+			if not ok then
+				explosives.log("WARNING: Particle call failed using new-style 1-arg; switching to multiarg.")
+				explosives.log("...error was "..err)
+				explosives.compat.particle_call="multiarg"
+			end
+		elseif explosives.compat.particle_call=="multiarg" then
+			local ok, err=pcall(minetest.add_particle, pspec.pos, pvel, pacc, pspec.expirationtime, pspec.size, pspec.collisiondetection, pspec.texture, nil)
+			if not ok then
+				explosives.log("WARNING: Multi-arg (with size) call failed; switching to multiarg_nosz.")
+				explosives.log("...error was "..err)
+				explosives.compat.particle_call="multiarg_nosz"
+			end
+		elseif explosives.compat.particle_call=="multiarg_nosz" then
+			local ok, err=pcall(minetest.add_particle, pspec.pos, pvel, pacc, pspec.expirationtime, pspec.collisiondetection, pspec.texture, nil)
+			if not ok then
+				explosives.log("WARNING: Multi-arg particle call failed; either switch to \"1arg\" (newer versions) or turn \"off\". Turning off now.")
+				explosives.log("...error was "..err)
+				explosives.compat.particle_call="off"
+			end
+		end
 		if not self.boomtime then self.boomtime=0 end
 		if dt>self.boomtime then
 			--pos={x=pos.x+0.25, y=pos.y+0.25, z=pos.z+0.25}

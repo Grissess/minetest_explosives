@@ -15,6 +15,9 @@ explosives={
 		VACUUM_RADIUS={key="explosion_vacuum_radius", type="n", default=1024}, --Radius of /vacuum command
 		ENABLE_TRACE={key="explosion_enable_trace", type="b", default=true}, --Enable /trace command, should be turned off for servers!
 		DAMAGE_FACTOR={key="explosion_damage_factor", type="n", default=80} --Blast damage done by a player at the epicenter of a 1-power explosion
+	},
+	compat={
+		particle_call="1arg"
 	}
 }
 
