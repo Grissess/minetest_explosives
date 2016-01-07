@@ -91,10 +91,11 @@ function explosives.general_explode(pos, power, player, options, modfunc, param,
 		--Store this now, because there's going to likely be a lot of drops later.
 		--The following distance calculation is a solution for which the damage would be >=1;
 		--this should suffice for our purposes.
+                local radius=(explosives.DAMAGE_FACTOR*power)^0.5
 		if options.entitydamage or options.entitypush then
-			local radius=(explosives.DAMAGE_FACTOR*power)^0.5
 			objects=minetest.get_objects_inside_radius(pos, radius)
 		end
+                minetest.sound_play("explosives_explode", {pos=pos, gain=2.0, max_hear_distance=radius*64})
 	end
 	
 	if options.blockdamage then
