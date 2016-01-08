@@ -58,6 +58,12 @@ function explosives.after_place_node(pos, placer, itemstack, pointed)
 	local meta=minetest.get_meta(pos)
 	meta:set_string("player", name)
 	meta:set_string("infotext", name) --DEBUG
+        if name == "deployer" then -- moremesecons?
+                explosives.detonate(pos)
+        end
+        if placer.is_fake_player then -- pipeworks:deployer masquerades as owner
+                explosives.detonate(pos)
+        end
 end
 
 function explosives.mesecons_action_on(pos, node)
